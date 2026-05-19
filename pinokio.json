@@ -2,6 +2,30 @@
   "title": "AceJAM RafStudio Edition (ruRU support)",
   "description": "An extended version of AceJAM with improved support for the Russian language. It analyzes the description using the built-in Qwen GGUF model and generates a music track using ACE-Step v1.5",
   "icon": "icon.png",
+  "ui": {
+    "questions": [
+      {
+        "id": "ace_model",
+        "question": "Select ACE-Step audio model:",
+        "options": {
+          "turbo": "Turbo (fast, ~6 GB VRAM)",
+          "xl_turbo": "XL Turbo (good, ~10 GB VRAM)",
+          "xl_base": "XL Base (maximum quality, ~18 GB VRAM)"
+        },
+        "default": "xl_base"
+      },
+      {
+        "id": "composer_model",
+        "question": "Select Composer (Qwen) model for lyrics:",
+        "options": {
+          "tiny": "Tiny (fast, ~2 GB RAM)",
+          "balanced": "Balanced (medium, ~4 GB RAM)",
+          "quality": "Quality (maximum quality, ~8 GB RAM)"
+        },
+        "default": "quality"
+      }
+    ]
+  },
   "links": [
     {
       "title": "Model References",
