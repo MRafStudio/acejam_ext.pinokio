@@ -8,6 +8,7 @@ module.exports = {
         env: {
           GRADIO_ANALYTICS_ENABLED: "False",
           GRADIO_SERVER_NAME: "127.0.0.1",
+          GRADIO_SERVER_PORT: "7861",
           PYTHONUNBUFFERED: "1",
           XDG_CACHE_HOME: "{{path.resolve(cwd, 'cache')}}",
           HF_HOME: "{{path.resolve(cwd, 'cache', 'huggingface')}}",

@@ -332,6 +332,7 @@ def create(
     composer_profile: str = "quality",
     song_model: str = "auto",
     instrumental: bool = False,
+    language: str = "ru",
 ) -> str:
     started_at = time.perf_counter()
     try:
@@ -351,6 +352,7 @@ def create(
             audio_duration=audio_duration,
             profile=composer_profile,
             instrumental=instrumental,
+            language=language,
         )
         compose_elapsed = time.perf_counter() - compose_started_at
         print(
