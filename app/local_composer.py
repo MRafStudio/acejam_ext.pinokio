@@ -38,7 +38,7 @@ Rules:
 - `title` must be a short, catchy song title.
 - `tags` must be an array of 3 to 6 concise style tags.
 - `bpm` must be a plausible tempo integer.
-- `language` must be one of: en, zh, ja, ko, instrumental, unknown.
+- `language` must be one of: en, zh, ja, ko, ru, instrumental, unknown.
 - `lyrics` must be a single string using section markers like [Verse], [Chorus], [Bridge].
 - If the request is instrumental, set `language` to `instrumental` and `lyrics` to `[Instrumental]`.
 - Match the lyric length and number of sections to the requested duration and section plan.
@@ -440,6 +440,7 @@ class LocalComposer:
         audio_duration: float = 60.0,
         profile: str = "auto",
         instrumental: bool = False,
+        language: str = "ru",
     ) -> dict[str, Any]:
         compose_started_at = time.perf_counter()
         selected = self.resolve_profile(profile, audio_duration=audio_duration, instrumental=instrumental)
@@ -463,6 +464,7 @@ class LocalComposer:
             f"Description: {description.strip()}\n"
             f"Instrumental: {'yes' if instrumental else 'no'}\n"
             f"Target duration seconds: {int(audio_duration)}\n"
+            f"Language: {language}\n"
             f"{_duration_prompt(audio_duration, instrumental)}\n"
             "Write the song spec now."
         )
@@ -509,14 +511,18 @@ class LocalComposer:
             bpm_value = 120
         bpm_value = min(180, max(60, bpm_value))
 
-        language = str(payload.get("language") or ("instrumental" if instrumental else "en")).strip().lower()
-        if language not in {"en", "zh", "ja", "ko", "instrumental", "unknown"}:
-            language = "instrumental" if instrumental else "en"
+        returned_language = str(payload.get("language") or ("instrumental" if instrumental else "en")).strip().lower()
+        if returned_language not in {"en", "zh", "ja", "ko", "ru", "instrumental", "unknown"}:
+            returned_language = "instrumental" if instrumental else "en"
 
         lyrics = _normalize_lyrics(payload.get("lyrics"), instrumental)
         used_fallback_lyrics = False
-        if not instrumental and (language == "instrumental" or not _has_meaningful_lyrics(lyrics, audio_duration)):
-            language = "en"
+        if not instrumental and (returned_language == "instrumental" or not _has_meaningful_lyrics(lyrics, audio_duration)):
+            # Если запрошен русский, но fallback сработал — используем русский язык
+            if language == "ru":
+                returned_language = "ru"
+            else:
+                returned_language = "en"
             lyrics = _fallback_lyrics(title, description, audio_duration, instrumental=False)
             used_fallback_lyrics = True
 
@@ -524,7 +530,7 @@ class LocalComposer:
         print(
             "[composer] "
             f"done profile={selected.key} "
-            f"language={language} "
+            f"language={returned_language} "
             f"bpm={bpm_value} "
             f"fallback_lyrics={used_fallback_lyrics} "
             f"total={total_elapsed:.2f}s"
@@ -537,7 +543,7 @@ class LocalComposer:
             "title": title,
             "tags": ", ".join(tags),
             "bpm": bpm_value,
-            "language": language,
+            "language": returned_language,
             "lyrics": lyrics,
             "composer_profile": selected.key,
             "composer_model": selected.label,
