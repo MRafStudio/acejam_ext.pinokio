@@ -218,11 +218,11 @@ composer = LocalComposer(BASE_DIR / "composer_models")
 
 
 def _language_for_generation(language: str) -> str:
-    # Поддержка русского языка
+    # РџРѕРґРґРµСЂР¶РєР° СЂСѓСЃСЃРєРѕРіРѕ СЏР·С‹РєР°
     if language in {"en", "zh", "ja", "ko", "ru"}:
         return language
-    # Если текст содержит русские буквы, возвращаем "ru"
-    if language and any('а' <= c <= 'я' or c == 'ё' for c in language.lower()):
+    # Р•СЃР»Рё С‚РµРєСЃС‚ СЃРѕРґРµСЂР¶РёС‚ СЂСѓСЃСЃРєРёРµ Р±СѓРєРІС‹, РІРѕР·РІСЂР°С‰Р°РµРј "ru"
+    if language and any('Р°' <= c <= 'СЏ' or c == 'С‘' for c in language.lower()):
         return "ru"
     return "en"
 
@@ -240,7 +240,7 @@ def _run_inference(
     with handler_lock:
         active_song_model = _ensure_song_model(song_model)
         
-        # Определяем количество шагов в зависимости от модели
+        # РћРїСЂРµРґРµР»СЏРµРј РєРѕР»РёС‡РµСЃС‚РІРѕ С€Р°РіРѕРІ РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ РјРѕРґРµР»Рё
         steps_to_use = infer_steps
         if "base" in active_song_model.lower() and infer_steps < 40:
             print(f"[inference] Base model detected. Increasing steps from {infer_steps} to 50 for better quality")
@@ -366,7 +366,7 @@ def create(
         _log_block("create.generated_lyrics", composed["lyrics"])
         _cleanup_accelerator_memory()
 
-        # Определяем количество шагов в зависимости от выбранной модели
+        # РћРїСЂРµРґРµР»СЏРµРј РєРѕР»РёС‡РµСЃС‚РІРѕ С€Р°РіРѕРІ РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ РІС‹Р±СЂР°РЅРЅРѕР№ РјРѕРґРµР»Рё
         infer_steps_value = 50
         print(
             "[create->acestep] "
