@@ -1450,11 +1450,13 @@
                             runtimeConfig.active_song_model = result.song_model;
                             renderSongModelNote();
                         }
-                        songTitleEl.textContent = result.title || "";
-                        songTagsEl.textContent = result.tags || "";
+                        if (songTitleEl) songTitleEl.textContent = result.title || "";
+                        if (songTagsEl) songTagsEl.textContent = result.tags || "";
                         const thumbEl = document.getElementById("song-thumb");
-                        if (result.thumbnail) { thumbEl.src = result.thumbnail; thumbEl.style.display = "block"; }
-                        else { thumbEl.style.display = "none"; }
+                        if (thumbEl) {
+                            if (result.thumbnail) { thumbEl.src = result.thumbnail; thumbEl.style.display = "block"; }
+                            else { thumbEl.style.display = "none"; }
+                        }
                         currentSong = {
                             title: result.title || "Untitled",
                             tags: result.tags || "",
