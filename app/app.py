@@ -27,6 +27,7 @@ SONGS_DIR = DATA_DIR / "songs"
 KNOWN_ACE_STEP_MODELS = [
     "acestep-v15-turbo",
     "acestep-v15-xl-turbo",
+    "acestep-v15-xl-base",
 ]
 
 MODEL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -63,15 +64,14 @@ def _default_acestep_checkpoint() -> str:
     override = os.environ.get("ACE_STEP_MODEL", "").strip()
     if override:
         return override
-    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        return "acestep-v15-turbo"
-    return "acestep-v15-xl-turbo"
+    return "acestep-v15-xl-base"
 
 
 def _song_model_label(name: str) -> str:
     labels = {
         "acestep-v15-turbo": "Turbo",
         "acestep-v15-xl-turbo": "XL Turbo",
+        "acestep-v15-xl-base": "XL Base",
     }
     return labels.get(name, name)
 
@@ -217,8 +217,12 @@ composer = LocalComposer(BASE_DIR / "composer_models")
 
 
 def _language_for_generation(language: str) -> str:
-    if language in {"en", "zh", "ja", "ko"}:
+    # Поддержка русского языка
+    if language in {"en", "zh", "ja", "ko", "ru"}:
         return language
+    # Если текст содержит русские буквы, возвращаем "ru"
+    if language and any('а' <= c <= 'я' or c == 'ё' for c in language.lower()):
+        return "ru"
     return "en"
 
 
@@ -234,11 +238,18 @@ def _run_inference(
     use_random_seed = seed < 0
     with handler_lock:
         active_song_model = _ensure_song_model(song_model)
+        
+        # Определяем количество шагов в зависимости от модели
+        steps_to_use = infer_steps
+        if "base" in active_song_model.lower() and infer_steps < 40:
+            print(f"[inference] Base model detected. Increasing steps from {infer_steps} to 50 for better quality")
+            steps_to_use = 50
+        
         result = handler.generate_music(
             captions=prompt,
             lyrics=lyrics,
             audio_duration=audio_duration,
-            inference_steps=infer_steps,
+            inference_steps=steps_to_use,
             guidance_scale=7.0,
             use_random_seed=use_random_seed,
             seed=None if use_random_seed else seed,
@@ -246,7 +257,6 @@ def _run_inference(
             shift=1.0,
             use_adg=False,
             vocal_language=_language_for_generation(language),
-            # The UI returns a single track, so avoid generating an unused second sample.
             batch_size=1,
         )
 
@@ -309,7 +319,7 @@ def _load_feed_from_disk() -> list[dict]:
 
 _feed_songs = _load_feed_from_disk()
 
-app = Server(title="AceJAM")
+app = Server(title="AceJAM RafStudio Edition")
 
 
 @app.api(name="create", concurrency_limit=1, time_limit=420)
@@ -318,7 +328,7 @@ def create(
     audio_duration: float = 60.0,
     seed: int = -1,
     community: bool = False,
-    composer_profile: str = "auto",
+    composer_profile: str = "quality",
     song_model: str = "auto",
     instrumental: bool = False,
 ) -> str:
@@ -355,11 +365,13 @@ def create(
         _log_block("create.generated_lyrics", composed["lyrics"])
         _cleanup_accelerator_memory()
 
+        # Определяем количество шагов в зависимости от выбранной модели
+        infer_steps_value = 50
         print(
             "[create->acestep] "
             f"requested_song_model={song_model} "
             f"audio_duration={audio_duration} "
-            f"infer_steps=8 "
+            f"infer_steps={infer_steps_value} "
             f"seed={seed} "
             f"language={composed['language']}"
         )
@@ -370,7 +382,7 @@ def create(
             prompt=composed["tags"],
             lyrics=composed["lyrics"],
             audio_duration=audio_duration,
-            infer_steps=8,
+            infer_steps=infer_steps_value,
             seed=seed,
             language=composed["language"],
             song_model=song_model,
@@ -437,7 +449,7 @@ def generate(
     prompt: str,
     lyrics: str,
     audio_duration: float = 60.0,
-    infer_step: int = 8,
+    infer_step: int = 50,
     guidance_scale: float = 7.0,
     seed: int = -1,
     song_model: str = "auto",
@@ -446,7 +458,7 @@ def generate(
 ) -> str:
     del guidance_scale, lora_name_or_path, lora_weight
     try:
-        wav_path, _ = _run_inference(prompt, lyrics, audio_duration, infer_step, seed, "en", song_model=song_model)
+        wav_path, _ = _run_inference(prompt, lyrics, audio_duration, infer_step, seed, "ru", song_model=song_model)
         encoded = base64.b64encode(Path(wav_path).read_bytes()).decode()
         return f"data:audio/wav;base64,{encoded}"
     except Exception as exc:
