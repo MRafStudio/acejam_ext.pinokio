@@ -821,37 +821,38 @@
                 <p>AceJAM RafStudio Edition — расширенная версия с поддержкой русского языка, XL Base моделью и Quality композитором</p>
             </header>
 
-            <div class="compose-box">
-                <textarea id="description-input"
-                          placeholder="Опишите песню на русском или английском... Например: весёлая диско-песня про карточного Валета, укулеле, 120 bpm, мажор"></textarea>
-                <div class="compose-controls">
-                    <label class="pill">
-                        <select id="duration-select">
-                            <option value="30">30s</option>
-                            <option value="60">1 min</option>
-                            <option value="120">2 min</option>
-                            <option value="180" selected>3 min</option>
-                        </select>
-                    </label>
-                    <label class="pill">
-                        <select id="composer-select">
-                            <option value="auto">Auto</option>
-                            <option value="tiny">Tiny</option>
-                            <option value="balanced">Balanced</option>
-                            <option value="quality" selected>Quality</option>
-                        </select>
-                    </label>
-                    <label class="pill">
-                        <select id="song-model-select">
-                            <option value="auto" selected>Song Model</option>
-                        </select>
-                    </label>
-                    <label class="pill"><input type="checkbox" id="instrumental-check" /><span>Instrumental</span></label>
-                    <label class="pill"><input type="checkbox" id="community-check" checked /><span class="share-label-full">Save to local feed</span><span class="share-label-short">Save</span></label>
-                    <span class="spacer"></span>
-                    <button class="generate-btn" id="generate-btn">Generate</button>
-                </div>
-                <div class="model-note" id="model-note">Loading model settings…</div>
+            <div class="compose-controls">
+                <label class="pill">
+                    <select id="duration-select">
+                        <option value="30">30s</option>
+                        <option value="60">1 min</option>
+                        <option value="120">2 min</option>
+                        <option value="180" selected>3 min</option>
+                    </select>
+                </label>
+                <label class="pill">
+                    <select id="composer-select">
+                        <option value="auto">Auto</option>
+                        <option value="tiny">Tiny</option>
+                        <option value="balanced">Balanced</option>
+                        <option value="quality" selected>Quality</option>
+                    </select>
+                </label>
+                <label class="pill">
+                    <select id="language-select">
+                        <option value="ru" selected>Русский</option>
+                        <option value="en">English</option>
+                    </select>
+                </label>
+                <label class="pill">
+                    <select id="song-model-select">
+                        <option value="auto" selected>Song Model</option>
+                    </select>
+                </label>
+                <label class="pill"><input type="checkbox" id="instrumental-check" /><span>Instrumental</span></label>
+                <label class="pill"><input type="checkbox" id="community-check" checked /><span class="share-label-full">Save to local feed</span><span class="share-label-short">Save</span></label>
+                <span class="spacer"></span>
+                <button class="generate-btn" id="generate-btn">Generate</button>
             </div>
             <div class="status-bar" id="status-bar"></div>
 
@@ -1428,6 +1429,7 @@
                     composer_profile: composerSelect.value,
                     song_model: songModelSelect.value,
                     instrumental: instrumentalChk.checked,
+                    language: languageSelect.value,
                 });
 
                 for await (const msg of job) {
@@ -1472,6 +1474,21 @@
         });
 
         // ── Init ─────────────────────────────────────────────────────────────────
+        const languageSelect = document.getElementById("language-select");
+
+        // Загрузка сохранённого языка
+        const savedLanguage = localStorage.getItem("acejam_language");
+        if (savedLanguage && (savedLanguage === "ru" || savedLanguage === "en")) {
+            languageSelect.value = savedLanguage;
+        } else {
+            languageSelect.value = "ru"; // русский по умолчанию
+        }
+
+        // Сохранение языка при изменении
+        languageSelect.addEventListener("change", () => {
+            localStorage.setItem("acejam_language", languageSelect.value);
+        });
+
         getClient().then(async () => {
             await Promise.allSettled([loadConfig(), loadFeed()]);
         }).catch(console.error);
